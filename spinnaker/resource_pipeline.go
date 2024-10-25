@@ -72,7 +72,12 @@ func resourcePipelineCreate(data *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return resourcePipelineRead(data, meta)
+	if err := resourcePipelineRead(data, meta); err != nil {
+		if err.Error() == api.ErrCodeNoSuchEntityException {
+			return resourcePipelineRead(data, meta)
+		}
+		return err
+	}
 }
 
 func resourcePipelineRead(data *schema.ResourceData, meta interface{}) error {
@@ -154,7 +159,7 @@ func resourceSpinnakerPipelineImport(ctx context.Context, data *schema.ResourceD
 	if err := data.Set("application", application); err != nil {
 		return nil, err
 	}
-	if err:= data.Set("name", name); err != nil {
+	if err := data.Set("name", name); err != nil {
 		return nil, err
 	}
 
