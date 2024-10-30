@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"regexp"
 
+	api "github.com/himanhsugusain/terraform-provider-spinnaker/spinnaker/api"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mercari/terraform-provider-spinnaker/spinnaker/api"
 )
 
 func resourceSpinnakerCanaryConfig() *schema.Resource {
@@ -79,15 +80,13 @@ type judge struct {
 	judgeConfigurations judgeConfigurations `json:"judgeConfigurations"`
 }
 
-type judgeConfigurations struct {
-}
+type judgeConfigurations struct{}
 
 type metric struct {
 	name string
 }
 
-type templates struct {
-}
+type templates struct{}
 
 type classifier struct {
 	groupWeights map[string]int `json:"groupWeights"`

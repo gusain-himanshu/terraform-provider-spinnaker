@@ -75,10 +75,12 @@ func providerConfigureFunc(data *schema.ResourceData) (interface{}, error) {
 	config := data.Get("config").(string)
 	ignoreCertErrors := data.Get("ignore_cert_errors").(bool)
 	defaultHeaders := data.Get("default_headers").(string)
+	ignoreRedirects := data.Get("ignore-redirects").(bool)
+	retryTimeout := data.Get("retry-timeout").(int)
 
 	ui := output.NewUI(false, false, output.MarshalToJson, os.Stdout, os.Stderr)
 
-	client, err := gate.NewGateClient(ui, gateEndpoint, defaultHeaders, config, ignoreCertErrors)
+	client, err := gate.NewGateClient(ui, gateEndpoint, defaultHeaders, config, ignoreCertErrors, ignoreRedirects, retryTimeout)
 	if err != nil {
 		return nil, err
 	}

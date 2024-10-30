@@ -13,7 +13,7 @@ Interested in contributing to Spinnaker? Please help us!
 Clone the repository to a directory outside of your GOPATH:
 
 ```bash
-$ git clone https://github.com/mercari/terraform-provider-spinnaker
+$ git clone https://github.com/himanhsugusain/terraform-provider-spinnaker
 ```
 
 Afterward, use `go build` to build the program. This will automatically fetch dependencies.

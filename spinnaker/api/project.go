@@ -100,7 +100,7 @@ func NewUpsertApplicationTask(d *schema.ResourceData) (UpsertApplicationTask, er
 func GetProject(client *gate.GatewayClient, projectName string, dest interface{}) error {
 	project, resp, err := client.ProjectControllerApi.GetUsingGET1(client.Context, projectName)
 	if resp != nil {
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode == http.StatusNotFound {
 			return fmt.Errorf("Project '%s' not found", projectName)
 		} else if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("Encountered an error getting application, status code: %d", resp.StatusCode)

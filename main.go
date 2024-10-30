@@ -6,7 +6,8 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"github.com/mercari/terraform-provider-spinnaker/spinnaker"
+
+	"github.com/himanhsugusain/terraform-provider-spinnaker/spinnaker"
 )
 
 func main() {
@@ -25,6 +26,7 @@ func main() {
 		}
 	} else {
 		plugin.Serve(&plugin.ServeOpts{
-			ProviderFunc: spinnaker.Provider})
+			ProviderFunc: spinnaker.Provider,
+		})
 	}
 }

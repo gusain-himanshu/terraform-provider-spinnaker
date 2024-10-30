@@ -9,7 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mercari/terraform-provider-spinnaker/spinnaker/api"
+
+	api "github.com/himanhsugusain/terraform-provider-spinnaker/spinnaker/api"
 )
 
 const (
@@ -121,10 +122,10 @@ func resourceSpinnakerApplicationRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	if app == nil {
-		d.SetId("")
-		return nil
-	}
+	// if app == nil {
+	// 	d.SetId("")
+	// 	return nil
+	// }
 
 	if v := app.Name; v != "" {
 		if _, deprecated := d.GetOk("application"); deprecated {

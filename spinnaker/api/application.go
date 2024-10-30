@@ -68,7 +68,7 @@ func NewCreateApplicationTask(d *schema.ResourceData) (CreateApplicationTask, er
 	}
 
 	if v, ok := d.GetOkExists("permission"); ok {
-		var permissions = map[string][]string{}
+		permissions := map[string][]string{}
 
 		inputs := v.([]interface{})
 		for _, input := range inputs {
@@ -114,7 +114,7 @@ func GetApplication(client *gate.GatewayClient, appName string, dest interface{}
 	opts := &gateclient.ApplicationControllerApiGetApplicationUsingGETOpts{}
 	app, resp, err := client.ApplicationControllerApi.GetApplicationUsingGET(client.Context, appName, opts)
 	if resp != nil {
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode == http.StatusNotFound {
 			return fmt.Errorf("Application '%s' not found", appName)
 		} else if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("Encountered an error getting application, status code: %d", resp.StatusCode)
@@ -185,7 +185,6 @@ func DeleteApplication(client *gate.GatewayClient, appName string) error {
 	}
 
 	_, resp, err := client.TaskControllerApi.TaskUsingPOST1(client.Context, deleteAppTask)
-
 	if err != nil {
 		return err
 	}

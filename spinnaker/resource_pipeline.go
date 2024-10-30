@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mercari/terraform-provider-spinnaker/spinnaker/api"
+	api "github.com/himanhsugusain/terraform-provider-spinnaker/spinnaker/api"
 )
 
 func resourcePipeline() *schema.Resource {
@@ -72,12 +72,7 @@ func resourcePipelineCreate(data *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if err := resourcePipelineRead(data, meta); err != nil {
-		if err.Error() == api.ErrCodeNoSuchEntityException {
-			return resourcePipelineRead(data, meta)
-		}
-		return err
-	}
+	return resourcePipelineRead(data, meta)
 }
 
 func resourcePipelineRead(data *schema.ResourceData, meta interface{}) error {
@@ -215,7 +210,6 @@ func pipelineDiffSuppressFunc(k, old, new string, d *schema.ResourceData) bool {
 }
 
 func decodeEditAndEncodePipeline(pipeline string) (encodedPipeline string, err error) {
-
 	// Decode the pipeline into a map we can edit
 	pipelineBytes := []byte(pipeline)
 	var pipelineMapGeneric interface{}

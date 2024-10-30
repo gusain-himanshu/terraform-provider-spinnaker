@@ -7,7 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mercari/terraform-provider-spinnaker/spinnaker/api"
+
+	api "github.com/himanhsugusain/terraform-provider-spinnaker/spinnaker/api"
 )
 
 func resourceSpinnakerProject() *schema.Resource {
@@ -100,10 +101,10 @@ func resourceSpinnakerProjectRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	if app == nil {
-		d.SetId("")
-		return nil
-	}
+	// if app == nil {
+	// 	d.SetId("")
+	// 	return nil
+	// }
 
 	if v := app.ID; v != "" {
 		d.Set("id", v)
