@@ -1,6 +1,6 @@
 module github.com/himanhsugusain/terraform-provider-spinnaker
 
-go 1.23.2
+go 1.23
 
 require (
 	github.com/ghodss/yaml v1.0.0
