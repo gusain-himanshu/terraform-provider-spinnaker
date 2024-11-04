@@ -122,10 +122,10 @@ func resourceSpinnakerApplicationRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	// if app == nil {
-	// 	d.SetId("")
-	// 	return nil
-	// }
+	if app.Attributes == nil {
+		d.SetId("")
+		return nil
+	}
 
 	if v := app.Name; v != "" {
 		if _, deprecated := d.GetOk("application"); deprecated {

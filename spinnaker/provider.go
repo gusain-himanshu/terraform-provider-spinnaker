@@ -42,6 +42,18 @@ func Provider() *schema.Provider {
 				Description: "Headers to be passed to the gate endpoint by the client on each request",
 				Default:     "",
 			},
+			"retry_timeout": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Maximum time to wait (when polling) for a task to become completed.",
+				Default:     60,
+			},
+			"ignore_redirects": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "ignore redirects",
+				Default:     false,
+			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"spinnaker_application":       resourceSpinnakerApplication(),
@@ -75,8 +87,8 @@ func providerConfigureFunc(data *schema.ResourceData) (interface{}, error) {
 	config := data.Get("config").(string)
 	ignoreCertErrors := data.Get("ignore_cert_errors").(bool)
 	defaultHeaders := data.Get("default_headers").(string)
-	ignoreRedirects := data.Get("ignore-redirects").(bool)
-	retryTimeout := data.Get("retry-timeout").(int)
+	ignoreRedirects := data.Get("ignore_redirects").(bool)
+	retryTimeout := data.Get("retry_timeout").(int)
 
 	ui := output.NewUI(false, false, output.MarshalToJson, os.Stdout, os.Stderr)
 
