@@ -2,6 +2,7 @@ package spinnaker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -119,6 +120,11 @@ func resourceSpinnakerApplicationRead(ctx context.Context, d *schema.ResourceDat
 
 	app := &applicationRead{}
 	if err := api.GetApplication(client, appName, app); err != nil {
+		// application does not exists, create new
+		if errors.Is(err, api.ErrCodeNoSuchEntityException) {
+			d.SetId("")
+			return nil
+		}
 		return diag.FromErr(err)
 	}
 

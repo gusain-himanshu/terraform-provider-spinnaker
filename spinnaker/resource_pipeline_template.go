@@ -3,6 +3,7 @@ package spinnaker
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -78,7 +79,7 @@ func resourcePipelineTemplateRead(data *schema.ResourceData, meta interface{}) e
 
 	t := make(map[string]interface{})
 	if err := api.GetPipelineTemplate(client, templateName, &t); err != nil {
-		if err.Error() == api.ErrCodeNoSuchEntityException {
+		if errors.Is(err, api.ErrCodeNoSuchEntityException) {
 			data.SetId("")
 			return nil
 		}
@@ -156,7 +157,7 @@ func resourcePipelineTemplateExists(data *schema.ResourceData, meta interface{})
 
 	t := &templateRead{}
 	if err := api.GetPipelineTemplate(client, templateName, t); err != nil {
-		if err.Error() == api.ErrCodeNoSuchEntityException {
+		if errors.Is(err, api.ErrCodeNoSuchEntityException) {
 			return false, nil
 		}
 		return false, err

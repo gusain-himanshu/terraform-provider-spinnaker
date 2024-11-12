@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mitchellh/mapstructure"
 	gate "github.com/spinnaker/spin/cmd/gateclient"
+	orca_tasks "github.com/spinnaker/spin/cmd/orca-tasks"
 	gateclient "github.com/spinnaker/spin/gateapi"
 )
 
@@ -44,15 +44,15 @@ type applicationNameConstraint struct {
 // CreateApplicationTask represents the Spinnaker createApplication Application API object
 type CreateApplicationTask map[string]interface{}
 
-// NewCreateApplicationTask returns a Spinanker createApplication Application API object
-// by passed resource data configued
+// NewCreateApplicationTask returns a Spinnaker createApplication Application API object
+// by passed resource data configured
 func NewCreateApplicationTask(d *schema.ResourceData) (CreateApplicationTask, error) {
 	app := map[string]interface{}{}
 	app["name"] = GetApplicationName(d)
 	app["email"] = d.Get("email").(string)
 	app["instancePort"] = d.Get("instance_port").(int)
 
-	if v, ok := d.GetOkExists("cloud_providers"); ok {
+	if v, ok := d.GetOk("cloud_providers"); ok {
 		input := v.([]interface{})
 		cloudProviders := make([]string, len(input))
 		for k, input := range v.([]interface{}) {
@@ -67,7 +67,7 @@ func NewCreateApplicationTask(d *schema.ResourceData) (CreateApplicationTask, er
 		app["cloudProviders"] = strings.Join(cloudProviders, ",")
 	}
 
-	if v, ok := d.GetOkExists("permission"); ok {
+	if v, ok := d.GetOk("permission"); ok {
 		permissions := map[string][]string{}
 
 		inputs := v.([]interface{})
@@ -115,9 +115,9 @@ func GetApplication(client *gate.GatewayClient, appName string, dest interface{}
 	app, resp, err := client.ApplicationControllerApi.GetApplicationUsingGET(client.Context, appName, opts)
 	if resp != nil {
 		if resp.StatusCode == http.StatusNotFound {
-			return fmt.Errorf("Application '%s' not found", appName)
+			return ErrCodeNoSuchEntityException
 		} else if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("Encountered an error getting application, status code: %d", resp.StatusCode)
+			return fmt.Errorf("encountered an error getting application, status code: %d", resp.StatusCode)
 		}
 	}
 
@@ -141,32 +141,7 @@ func CreateApplication(client *gate.GatewayClient, createAppTask CreateApplicati
 	if err != nil {
 		return err
 	}
-
-	toks := strings.Split(ref["ref"].(string), "/")
-	id := toks[len(toks)-1]
-
-	task, resp, err := client.TaskControllerApi.GetTaskUsingGET1(client.Context, id)
-	attempts := 0
-	for (task == nil || !taskCompleted(task)) && attempts < 5 {
-		toks := strings.Split(ref["ref"].(string), "/")
-		id := toks[len(toks)-1]
-
-		task, resp, err = client.TaskControllerApi.GetTaskUsingGET1(client.Context, id)
-		attempts++
-		time.Sleep(time.Duration(attempts*attempts) * time.Second)
-	}
-
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("Encountered an error saving application, status code: %d", resp.StatusCode)
-	}
-	if !taskSucceeded(task) {
-		return fmt.Errorf("Encountered an error saving application, task output was: %v", task)
-	}
-
-	return nil
+	return orca_tasks.WaitForSuccessfulTask(client, ref)
 }
 
 // DeleteApplication deletes an application by application name
@@ -184,46 +159,12 @@ func DeleteApplication(client *gate.GatewayClient, appName string) error {
 		"description": fmt.Sprintf("Delete Application: %s", appName),
 	}
 
-	_, resp, err := client.TaskControllerApi.TaskUsingPOST1(client.Context, deleteAppTask)
+	ref, _, err := client.TaskControllerApi.TaskUsingPOST1(client.Context, deleteAppTask)
 	if err != nil {
 		return err
 	}
+	return orca_tasks.WaitForSuccessfulTask(client, ref)
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Encountered an error deleting application, status code: %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-func taskCompleted(task map[string]interface{}) bool {
-	taskStatus, exists := task["status"]
-	if !exists {
-		return false
-	}
-
-	COMPLETED := [...]string{"SUCCEEDED", "STOPPED", "SKIPPED", "TERMINAL", "FAILED_CONTINUE"}
-	for _, status := range COMPLETED {
-		if taskStatus == status {
-			return true
-		}
-	}
-	return false
-}
-
-func taskSucceeded(task map[string]interface{}) bool {
-	taskStatus, exists := task["status"]
-	if !exists {
-		return false
-	}
-
-	SUCCESSFUL := [...]string{"SUCCEEDED", "STOPPED", "SKIPPED"}
-	for _, status := range SUCCESSFUL {
-		if taskStatus == status {
-			return true
-		}
-	}
-	return false
 }
 
 func validateSpinnakerApplicationNameByCloudProvider(appName, provider string) error {

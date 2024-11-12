@@ -3,6 +3,7 @@ package spinnaker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -182,6 +183,10 @@ func resourcePipelineExists(data *schema.ResourceData, meta interface{}) (bool, 
 
 	var p pipelineRead
 	if _, err := api.GetPipeline(client, applicationName, pipelineName, &p); err != nil {
+		// the error states that it does not exists (when the check happened.)
+		if errors.Is(err, api.ErrCodeNoSuchEntityException) {
+			return false, nil
+		}
 		return false, err
 	}
 

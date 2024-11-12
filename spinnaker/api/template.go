@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -8,8 +9,8 @@ import (
 	gate "github.com/spinnaker/spin/cmd/gateclient"
 )
 
-const (
-	ErrCodeNoSuchEntityException = "NoSuchEntityException"
+var (
+	ErrCodeNoSuchEntityException = errors.New("NoSuchEntityException")
 )
 
 func CreatePipelineTemplate(client *gate.GatewayClient, template interface{}) error {
@@ -29,7 +30,7 @@ func GetPipelineTemplate(client *gate.GatewayClient, templateID string, dest int
 	successPayload, resp, err := client.PipelineTemplatesControllerApi.GetUsingGET(client.Context, templateID)
 	if err != nil {
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return fmt.Errorf("%s", ErrCodeNoSuchEntityException)
+			return ErrCodeNoSuchEntityException
 		}
 		return fmt.Errorf("Encountered an error getting pipeline template %s, %s\n",
 			templateID,
@@ -44,7 +45,7 @@ func GetPipelineTemplate(client *gate.GatewayClient, templateID string, dest int
 	}
 
 	if successPayload == nil {
-		return fmt.Errorf(ErrCodeNoSuchEntityException)
+		return ErrCodeNoSuchEntityException
 	}
 
 	if err := mapstructure.Decode(successPayload, dest); err != nil {

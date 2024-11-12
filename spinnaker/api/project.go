@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mitchellh/mapstructure"
 	gate "github.com/spinnaker/spin/cmd/gateclient"
+	orca_tasks "github.com/spinnaker/spin/cmd/orca-tasks"
 )
 
 var defaultProjectConfig = map[string]interface{}{
@@ -127,32 +126,7 @@ func CreateProject(client *gate.GatewayClient, upsertProjectTask UpsertApplicati
 	if err != nil {
 		return err
 	}
-
-	toks := strings.Split(ref["ref"].(string), "/")
-	id := toks[len(toks)-1]
-
-	task, resp, err := client.TaskControllerApi.GetTaskUsingGET1(client.Context, id)
-	attempts := 0
-	for (task == nil || !taskCompleted(task)) && attempts < 5 {
-		toks := strings.Split(ref["ref"].(string), "/")
-		id := toks[len(toks)-1]
-
-		task, resp, err = client.TaskControllerApi.GetTaskUsingGET1(client.Context, id)
-		attempts++
-		time.Sleep(time.Duration(attempts*attempts) * time.Second)
-	}
-
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("Encountered an error saving application, status code: %d", resp.StatusCode)
-	}
-	if !taskSucceeded(task) {
-		return fmt.Errorf("Encountered an error saving application, task output was: %v", task)
-	}
-
-	return nil
+	return orca_tasks.WaitForSuccessfulTask(client, ref)
 }
 
 // DeleteProject deletes a project by project name
