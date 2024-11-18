@@ -101,10 +101,10 @@ func resourceSpinnakerProjectRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	// if app == nil {
-	// 	d.SetId("")
-	// 	return nil
-	// }
+	if app == nil {
+		d.SetId("")
+		return nil
+	}
 
 	if v := app.ID; v != "" {
 		d.Set("id", v)
