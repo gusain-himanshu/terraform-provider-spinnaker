@@ -4,4 +4,4 @@
 
 The maintainer team is
 
-* KeisukeYamashita, Merpay SRE & Microservices Platfrom Group CI/CD Engineer - GitHub [@KeisukeYamashita](https://github.com/KeisukeYamashita) Twitter [@_k_e_k_e](https://twitter.com/_k_e_k_e)
+* Himanshu, SRE - GitHub [@himanhsugusain](https://github.com/himanhsugusain) X [@slowbot54](https://x.com/slowbot54)

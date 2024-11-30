@@ -1,6 +1,7 @@
 package spinnaker
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
-	"github.com/himanhsugusain/terraform-provider-spinnaker/spinnaker/api"
+	api "github.com/himanhsugusain/terraform-provider-spinnaker/spinnaker/api"
 )
 
 func TestAccResourceSourceSpinnakerPipeline_basic(t *testing.T) {
@@ -62,7 +63,7 @@ func testAccCheckSpinnakerPipelineDestroy(resourceName string, applicationName s
 		}
 
 		if _, err := api.GetPipeline(client, applicationName, pipelineName, pipeline); err != nil {
-			if err.Error() == api.ErrCodeNoSuchEntityException {
+			if errors.Is(err, api.ErrCodeNoSuchEntityException) {
 				return nil
 			}
 			return err
