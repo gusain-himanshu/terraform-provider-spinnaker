@@ -3,9 +3,9 @@ package api
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/mitchellh/mapstructure"
 	gate "github.com/spinnaker/spin/cmd/gateclient"
 	gateapi "github.com/spinnaker/spin/gateapi"
@@ -17,10 +17,15 @@ func CreatePipeline(client *gate.GatewayClient, pipelineJson map[string]interfac
 	foundPipeline, queryResp, _ := client.ApplicationControllerApi.GetPipelineConfigUsingGET(client.Context, application, pipelineName)
 	switch queryResp.StatusCode {
 	case http.StatusOK:
-		// pipeline found, let's use Spinnaker's known Pipeline ID, otherwise we'll get one created for us
+		// pipeline already exists and this version of api does not support updating or creating with
+		// same Id , so just return
+		// Ideally this should not even happen, but our spinnaker create sometime fails to register with
+		// terraform and the pipeline is not added to terraform state file even when the pipeline is created
+		// Then this happens and there is no way to recover from here other than ignoring.
+		// This verison of spinnaker response also just throws 400 Bad Request which is too generic to handle.
 		if len(foundPipeline) > 0 {
-			tflog.Debug(client.Context, "pipeline already exists", pipelineJson)
-			pipelineJson["id"] = foundPipeline["id"].(string)
+			log.Println("pipeline already exists", pipelineJson)
+			return nil
 		}
 	case http.StatusNotFound:
 		// pipeline doesn't exists, let's create a new one
@@ -28,11 +33,11 @@ func CreatePipeline(client *gate.GatewayClient, pipelineJson map[string]interfac
 		b, _ := io.ReadAll(queryResp.Body)
 		return fmt.Errorf("unhandled response %d: %s", queryResp.StatusCode, b)
 	}
-
 	// TODO: support option passing in and remove nil in below call
 	opt := &gateapi.PipelineControllerApiSavePipelineUsingPOSTOpts{}
 	saveResp, err := client.PipelineControllerApi.SavePipelineUsingPOST(client.Context, pipelineJson, opt)
 	if err != nil {
+		log.Printf("Error: %v\n", err)
 		return err
 	}
 	if saveResp.StatusCode != http.StatusOK {
@@ -45,7 +50,6 @@ func GetPipeline(client *gate.GatewayClient, applicationName, pipelineName strin
 	jsonMap, resp, err := client.ApplicationControllerApi.GetPipelineConfigUsingGET(client.Context,
 		applicationName,
 		pipelineName)
-
 	if err != nil {
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			return jsonMap, ErrCodeNoSuchEntityException

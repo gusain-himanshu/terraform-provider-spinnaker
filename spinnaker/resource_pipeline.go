@@ -70,6 +70,7 @@ func resourcePipelineCreate(data *schema.ResourceData, meta interface{}) error {
 	delete(tmp, "id")
 
 	if err := api.CreatePipeline(client, tmp); err != nil {
+		fmt.Printf("Error: %v\n", err)
 		return err
 	}
 
