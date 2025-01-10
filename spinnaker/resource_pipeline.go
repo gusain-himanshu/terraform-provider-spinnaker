@@ -56,24 +56,16 @@ type pipelineRead struct {
 func resourcePipelineCreate(data *schema.ResourceData, meta interface{}) error {
 	clientConfig := meta.(gateConfig)
 	client := clientConfig.client
-	applicationName := data.Get("application").(string)
-	pipelineName := data.Get("name").(string)
-	pipeline := data.Get("pipeline").(string)
 
-	var tmp map[string]interface{}
-	if err := json.NewDecoder(strings.NewReader(pipeline)).Decode(&tmp); err != nil {
+	createPipelineTask, err := api.NewSavePipelineTask(data)
+	if err != nil {
 		return err
 	}
 
-	tmp["application"] = applicationName
-	tmp["name"] = pipelineName
-	delete(tmp, "id")
-
-	if err := api.CreatePipeline(client, tmp); err != nil {
+	if err := api.CretePipeLineWithTask(client, createPipelineTask); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
-
 	return resourcePipelineRead(data, meta)
 }
 

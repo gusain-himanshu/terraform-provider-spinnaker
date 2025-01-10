@@ -1,49 +1,38 @@
 package api
 
 import (
+	b64 "encoding/base64"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mitchellh/mapstructure"
 	gate "github.com/spinnaker/spin/cmd/gateclient"
-	gateapi "github.com/spinnaker/spin/gateapi"
+	orca_tasks "github.com/spinnaker/spin/cmd/orca-tasks"
 )
 
-func CreatePipeline(client *gate.GatewayClient, pipelineJson map[string]interface{}) error {
-	application := pipelineJson["application"].(string)
-	pipelineName := pipelineJson["name"].(string)
-	foundPipeline, queryResp, _ := client.ApplicationControllerApi.GetPipelineConfigUsingGET(client.Context, application, pipelineName)
-	switch queryResp.StatusCode {
-	case http.StatusOK:
-		// pipeline already exists and this version of api does not support updating or creating with
-		// same Id , so just return
-		// Ideally this should not even happen, but our spinnaker create sometime fails to register with
-		// terraform and the pipeline is not added to terraform state file even when the pipeline is created
-		// Then this happens and there is no way to recover from here other than ignoring.
-		// This verison of spinnaker response also just throws 400 Bad Request which is too generic to handle.
-		if len(foundPipeline) > 0 {
-			log.Println("pipeline already exists", pipelineJson)
-			return nil
-		}
-	case http.StatusNotFound:
-		// pipeline doesn't exists, let's create a new one
-	default:
-		b, _ := io.ReadAll(queryResp.Body)
-		return fmt.Errorf("unhandled response %d: %s", queryResp.StatusCode, b)
+type CreatePipeLineTask map[string]interface{}
+
+func NewSavePipelineTask(d *schema.ResourceData) (CreatePipeLineTask, error) {
+	pipeLineTask := make(map[string]interface{})
+	pipeLineTask["application"] = d.Get("application").(string)
+	pipeLineTask["description"] = fmt.Sprintf("Save Pipeline %s", d.Get("name").(string))
+	pipeLineTask["job"] = []map[string]interface{}{
+		{
+			"type":     "savePipeline",
+			"pipeline": b64.StdEncoding.EncodeToString([]byte(d.Get("pipeline").(string))),
+		},
 	}
-	// TODO: support option passing in and remove nil in below call
-	opt := &gateapi.PipelineControllerApiSavePipelineUsingPOSTOpts{}
-	saveResp, err := client.PipelineControllerApi.SavePipelineUsingPOST(client.Context, pipelineJson, opt)
+	return pipeLineTask, nil
+}
+
+// CreatePipeline creates passed pipeline
+func CretePipeLineWithTask(client *gate.GatewayClient, createPipeLineTask CreatePipeLineTask) error {
+	ref, _, err := client.TaskControllerApi.TaskUsingPOST1(client.Context, createPipeLineTask)
 	if err != nil {
-		log.Printf("Error: %v\n", err)
 		return err
 	}
-	if saveResp.StatusCode != http.StatusOK {
-		return fmt.Errorf("encountered an error saving pipeline, status code: %d", saveResp.StatusCode)
-	}
-	return nil
+	return orca_tasks.WaitForSuccessfulTask(client, ref)
 }
 
 func GetPipeline(client *gate.GatewayClient, applicationName, pipelineName string, dest interface{}) (map[string]interface{}, error) {
